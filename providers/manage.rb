@@ -33,8 +33,20 @@ end
 
 action :create do
 
-  include_recipe "build-essential"
-  chef_gem "ruby-shadow"
+  shadow_available = begin
+                        require 'shadow'
+                        Shadow::Passwd::Entry::const_get("Shadow") ? true : false
+                      rescue LoadError
+                        false
+                      end
+
+  unless shadow_available
+   shadow = gem_package 'ruby-shadow' do
+      action :nothing
+    end
+   shadow.run_action(:install)
+   Gem.clear_paths
+  end
 
   security_group = Array.new
 
